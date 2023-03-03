@@ -20,6 +20,10 @@ struct HomeView: View {
     
     var body: some View {
         VStack {
+            Text("Scanner BLE")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.top, 16)
             HStack {
                 Spacer()
                 Button(action: {
@@ -34,6 +38,12 @@ struct HomeView: View {
                     Text("Stop")
                 }
                 Spacer()
+                Button(action: {
+                    viewModel.clearList()
+                }) {
+                    Text("Clear")
+                }
+                Spacer()
             }.padding(.vertical, 8)
             List(viewModel.discoveredDevices) { device in
                 NavigationLink(destination: DetailView(viewModel: DetailViewModel(device: device))) {
@@ -43,6 +53,7 @@ struct HomeView: View {
         }
     }
 }
+
 
 
 
