@@ -46,9 +46,10 @@ struct HomeView: View {
                 Spacer()
             }.padding(.vertical, 8)
             List(viewModel.discoveredDevices) { device in
-                NavigationLink(destination: DetailView(viewModel: DetailViewModel(device: device))) {
+                NavigationLink(destination: DetailView(viewModel: DetailViewModel(device: device, peripheral: device.peripheral))) {
                     Text(device.name)
                 }
+
             }
         }
     }

@@ -21,9 +21,9 @@ struct DetailView: View {
             }
         }
         .onAppear {
-            guard let peripheral = viewModel.selectedPeripheral else { return }
-            viewModel.connectToDevice(peripheral: peripheral)
+            viewModel.connectToDevice(peripheral: viewModel.selectedPeripheral)
         }
+
         .navigationBarTitle(Text(viewModel.device.name), displayMode: .inline)
     }
 }

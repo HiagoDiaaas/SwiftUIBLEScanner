@@ -11,20 +11,24 @@ import CoreBluetooth
 import SwiftUI
 
 class DetailViewModel: NSObject, ObservableObject {
+    
     @Published var manufacturerName: String = ""
     @Published var modelName: String = ""
     @Published var isConnecting: Bool = false
-    var selectedPeripheral: CBPeripheral?
+    
+    var selectedPeripheral: CBPeripheral
     var centralManager: CBCentralManager?
     let heartRateDeviceService = CBUUID(string: "0x180A")
     let modelNumberStringCharacteristicCBUUID = CBUUID(string: "2A24")
     let manufacturerNameStringCBUUID = CBUUID(string: "2A29")
-    
+
     var device: DiscoveredDevice
-    
-    init(device: DiscoveredDevice) {
+
+    init(device: DiscoveredDevice, peripheral: CBPeripheral) {
         self.device = device
+        self.selectedPeripheral = peripheral
     }
+
     
     func connectToDevice(peripheral: CBPeripheral) {
         selectedPeripheral = peripheral
@@ -37,21 +41,35 @@ extension DetailViewModel: CBCentralManagerDelegate, CBPeripheralDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
-            centralManager?.scanForPeripherals(withServices: [heartRateDeviceService], options: nil)
+            centralManager?.scanForPeripherals(withServices: [heartRateDeviceService])
         default:
             break
         }
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        if peripheral == selectedPeripheral {
-            selectedPeripheral?.delegate = self
-            centralManager?.connect(selectedPeripheral!, options: nil)
-            centralManager?.stopScan()
+        selectedPeripheral = peripheral
+        selectedPeripheral.delegate = self
+        centralManager?.connect(selectedPeripheral)
+        if selectedPeripheral.state == .connected {
+            isConnecting = false
+        } else {
+            isConnecting = true
         }
+        print(selectedPeripheral.state)
+        centralManager?.stopScan()
+    
     }
     
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+            print("Failed to connect to \(peripheral). Error: \(error?.localizedDescription ?? "Unknown error")")
+            isConnecting = false
+        }
+
+    
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        print("Connected!")
+        isConnecting = false
         peripheral.discoverServices([heartRateDeviceService])
     }
     
@@ -63,6 +81,11 @@ extension DetailViewModel: CBCentralManagerDelegate, CBPeripheralDelegate {
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        
+        if let error = error {
+                    print("Error discovering characteristics for service \(service): \(error.localizedDescription)")
+                    return
+                }
         guard let characteristics = service.characteristics else { return }
         for characteristic in characteristics {
             if characteristic.uuid == modelNumberStringCharacteristicCBUUID {
